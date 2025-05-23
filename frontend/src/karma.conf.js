@@ -1,3 +1,6 @@
+// Karma configuration file, see link for more information
+// https://karma-runner.github.io/1.0/config/configuration-file.html
+
 module.exports = function (config) {
   config.set({
     basePath: '',
@@ -21,15 +24,8 @@ module.exports = function (config) {
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
-    autoWatch: false,            // отключить автообновление в CI
-    browsers: ['ChromeHeadlessNoSandbox'],  // использовать кастомный браузер
-    singleRun: true,             // запуск один раз и выход
-
-    customLaunchers: {
-      ChromeHeadlessNoSandbox: {
-        base: 'ChromeHeadless',
-        flags: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
-      }
-    }
+    autoWatch: true,
+    browsers: ['ChromeHeadless'],
+    singleRun: false
   });
 };
