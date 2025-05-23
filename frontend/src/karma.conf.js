@@ -25,16 +25,16 @@ module.exports = function (config) {
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: true,
-    
-    // Используем кастомный браузер для CI
+
     browsers: ['ChromeHeadlessNoSandbox'],
-    singleRun: true,
 
     customLaunchers: {
       ChromeHeadlessNoSandbox: {
         base: 'ChromeHeadless',
-        flags: ['--no-sandbox', '--disable-gpu']
+        flags: ['--no-sandbox', '--disable-setuid-sandbox']
       }
-    }
+    },
+
+    singleRun: true
   });
 };
