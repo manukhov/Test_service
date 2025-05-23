@@ -25,13 +25,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Build backend with Maven (или твой билд)
-        run: |
-          ./mvnw clean package
+      - name: Build backend with Maven
+        run: mvn clean package
 
       - name: Run backend tests
-        run: |
-          ./mvnw test
+        run: mvn test
 
   frontend:
     runs-on: ubuntu-latest
@@ -48,8 +46,11 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Install Chrome
+        run: sudo apt-get update && sudo apt-get install -y google-chrome-stable
+
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run frontend tests
         run: npm test
