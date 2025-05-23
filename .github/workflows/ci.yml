@@ -60,7 +60,7 @@ jobs:
 
       - name: Run frontend tests
         run: |
-          npx karma start --browsers ChromeHeadlessNoSandbox
+          npx karma start
 
       - name: Build frontend
         run: npm run build
