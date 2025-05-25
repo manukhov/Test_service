@@ -4,12 +4,13 @@ import { ProductsComponent } from './products/products.component';
 import { ShoppingCartComponent } from './shopping-cart/shopping-cart.component';
 import { OrdersComponent } from './orders/orders.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { EcommerceService } from './services/EcommerceService';
 
 describe('EcommerceComponent', () => {
   let component: EcommerceComponent;
   let fixture: ComponentFixture<EcommerceComponent>;
+  let httpMock: HttpTestingController;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
@@ -22,17 +23,26 @@ describe('EcommerceComponent', () => {
       imports: [
         FormsModule,
         ReactiveFormsModule,
-        HttpClientModule
+        HttpClientTestingModule
       ],
       providers: [EcommerceService]
     })
     .compileComponents();
+
+    httpMock = TestBed.inject(HttpTestingController);
   }));
 
   beforeEach(() => {
     fixture = TestBed.createComponent(EcommerceComponent);
     component = fixture.componentInstance;
+    // Мокаем запрос к /api/products
+    const req = httpMock.expectOne('http://localhost:9876/api/products');
+    req.flush([]);
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    httpMock.verify();
   });
 
   it('should create', () => {

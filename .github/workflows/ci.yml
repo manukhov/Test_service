@@ -42,12 +42,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '12' # Angular 6 требует Node 12
+          node-version: '12'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
       - name: Clear npm cache
-        run: npm cache clean --force # Очищаем кэш
+        run: npm cache clean --force
 
       - name: Install ChromeHeadless
         run: |
@@ -58,17 +58,38 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Protractor
+        run: npm install -g protractor
+
+      - name: Update WebDriver
+        run: webdriver-manager update
+
       - name: List test files
-        run: find src/app -name "*.spec.ts" # Проверяем файлы
+        run: |
+          echo "Unit test files:"
+          find src/app -name "*.spec.ts"
+          echo "E2E test files:"
+          find e2e/src -name "*.e2e-spec.ts"
 
       - name: Debug Karma and Chrome
         run: |
           npx karma --version
           google-chrome --version
           npx ng version
+          protractor --version
 
-      - name: Run frontend tests
+      - name: Run unit tests
         run: npx ng test --browsers=ChromeHeadless --watch=false
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+
+      - name: Start server for E2E tests
+        run: npx ng serve --proxy-config proxy-conf.json &
+        env:
+          CI: true
+
+      - name: Run E2E tests
+        run: npx ng e2e
         env:
           CHROME_BIN: /usr/bin/google-chrome
 
