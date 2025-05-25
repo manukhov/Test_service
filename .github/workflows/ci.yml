@@ -14,7 +14,6 @@ jobs:
     defaults:
       run:
         working-directory: ./backend
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -33,24 +32,34 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install Google Chrome
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '12' # Angular 6 лучше работает с Node 12
+          cache: 'npm' # Кэширование зависимостей
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install ChromeHeadless
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+          echo "CHROME_BIN=/usr/bin/google-chrome" >> $GITHUB_ENV
 
       - name: Install dependencies
-        run: npm install
-        working-directory: ./frontend
+        run: npm ci # Более надёжный для CI/CD
+
+      - name: Debug Karma and Chrome
+        run: |
+          npx karma --version
+          google-chrome --version
 
       - name: Run frontend tests
-        run: npx karma start
-        working-directory: ./frontend
+        run: npx karma start --single-run --browsers ChromeHeadless
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
