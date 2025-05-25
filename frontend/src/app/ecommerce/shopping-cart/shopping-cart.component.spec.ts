@@ -12,12 +12,13 @@ describe('ShoppingCartComponent', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async(() => {
-    const ecommerceServiceSpy = jasmine.createSpyObj('EcommerceService', ['getAllProducts'], {
-      ProductOrders: new ProductOrders(),
-      SelectedProductOrder: null,
-      OrdersChanged: of(),
-      ProductOrderChanged: of()
-    });
+    const ecommerceServiceSpy = jasmine.createSpyObj('EcommerceService', ['getAllProducts']);
+    ecommerceServiceSpy.getAllProducts.and.returnValue(of([]));
+    ecommerceServiceSpy.ProductOrders = new ProductOrders();
+    ecommerceServiceSpy.SelectedProductOrder = null;
+    ecommerceServiceSpy.OrdersChanged = of();
+    ecommerceServiceSpy.ProductOrderChanged = of();
+
     TestBed.configureTestingModule({
       declarations: [ShoppingCartComponent],
       imports: [
