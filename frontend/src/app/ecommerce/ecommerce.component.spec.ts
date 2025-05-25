@@ -13,6 +13,7 @@ describe('EcommerceComponent', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async(() => {
+    const ecommerceServiceSpy = jasmine.createSpyObj('EcommerceService', ['getAllProducts']);
     TestBed.configureTestingModule({
       declarations: [
         EcommerceComponent,
@@ -25,7 +26,7 @@ describe('EcommerceComponent', () => {
         ReactiveFormsModule,
         HttpClientTestingModule
       ],
-      providers: [EcommerceService]
+      providers: [{ provide: EcommerceService, useValue: ecommerceServiceSpy }]
     })
     .compileComponents();
 
@@ -35,6 +36,8 @@ describe('EcommerceComponent', () => {
   beforeEach(() => {
     fixture = TestBed.createComponent(EcommerceComponent);
     component = fixture.componentInstance;
+    const req = httpMock.expectOne('/api/products');
+    req.flush([]);
     fixture.detectChanges();
   });
 

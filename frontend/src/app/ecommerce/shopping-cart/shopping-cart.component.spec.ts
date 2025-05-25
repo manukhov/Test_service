@@ -10,6 +10,7 @@ describe('ShoppingCartComponent', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async(() => {
+    const ecommerceServiceSpy = jasmine.createSpyObj('EcommerceService', ['getAllProducts']);
     TestBed.configureTestingModule({
       declarations: [ShoppingCartComponent],
       imports: [
@@ -17,7 +18,7 @@ describe('ShoppingCartComponent', () => {
         ReactiveFormsModule,
         HttpClientTestingModule
       ],
-      providers: [EcommerceService]
+      providers: [{ provide: EcommerceService, useValue: ecommerceServiceSpy }]
     })
     .compileComponents();
 

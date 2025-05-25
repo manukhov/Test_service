@@ -38,7 +38,9 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy() {
-        this.sub.unsubscribe();
+        if (this.sub) {
+            this.sub.unsubscribe();
+        }
     }
 
     finishOrder() {
@@ -69,7 +71,7 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
     reset() {
         this.orderFinished = false;
         this.orders = new ProductOrders();
-        this.orders.productOrders = []
+        this.orders.productOrders = [];
         this.loadTotal();
         this.total = 0;
     }

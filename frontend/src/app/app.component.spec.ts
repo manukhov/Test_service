@@ -12,6 +12,7 @@ describe('AppComponent', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async(() => {
+    const ecommerceServiceSpy = jasmine.createSpyObj('EcommerceService', ['getAllProducts']);
     TestBed.configureTestingModule({
       declarations: [
         AppComponent,
@@ -25,7 +26,7 @@ describe('AppComponent', () => {
         ReactiveFormsModule,
         HttpClientTestingModule
       ],
-      providers: [EcommerceService]
+      providers: [{ provide: EcommerceService, useValue: ecommerceServiceSpy }]
     }).compileComponents();
 
     httpMock = TestBed.get(HttpTestingController);
@@ -38,12 +39,17 @@ describe('AppComponent', () => {
 
   it('should create the app', async(() => {
     const fixture = TestBed.createComponent(AppComponent);
+    const req = httpMock.expectOne('/api/products');
+    req.flush([]);
+    fixture.detectChanges();
     const app = fixture.debugElement.componentInstance;
     expect(app).toBeTruthy();
   }));
 
   it('should render ecommerce component', async(() => {
     const fixture = TestBed.createComponent(AppComponent);
+    const req = httpMock.expectOne('/api/products');
+    req.flush([]);
     fixture.detectChanges();
     const compiled = fixture.debugElement.nativeElement;
     expect(compiled.querySelector('app-ecommerce')).toBeTruthy();
