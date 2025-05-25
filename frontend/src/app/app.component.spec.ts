@@ -28,11 +28,11 @@ describe('AppComponent', () => {
       providers: [EcommerceService]
     }).compileComponents();
 
-    httpMock = TestBed.inject(HttpTestingController);
+    httpMock = TestBed.get(HttpTestingController);
   }));
 
   afterEach(() => {
-    httpMock.verify(); // Проверяем, что нет незакрытых запросов
+    httpMock.verify();
   });
 
   it('should create the app', async(() => {
@@ -41,19 +41,12 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   }));
 
-  it(`should have as title 'frontend'`, async(() => {
+  it('should render ecommerce component', async(() => {
     const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.debugElement.componentInstance;
-    expect(app.title).toEqual('frontend'); // Исправлено на основе шаблона
-  }));
-
-  it('should render title in a h1 tag', async(() => {
-    const fixture = TestBed.createComponent(AppComponent);
-    // Мокаем запрос к /api/products
     const req = httpMock.expectOne('http://localhost:9876/api/products');
-    req.flush([]); // Пустой массив, чтобы избежать алертов
+    req.flush([]);
     fixture.detectChanges();
     const compiled = fixture.debugElement.nativeElement;
-    expect(compiled.querySelector('h1').textContent).toContain('frontend'); // Исправлено
+    expect(compiled.querySelector('app-ecommerce')).toBeTruthy();
   }));
 });

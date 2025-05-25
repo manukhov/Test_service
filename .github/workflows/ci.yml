@@ -78,6 +78,9 @@ jobs:
           npx ng version
           protractor --version
 
+      - name: Build project
+        run: npx ng build
+
       - name: Run unit tests
         run: npx ng test --browsers=ChromeHeadless --watch=false
         env:

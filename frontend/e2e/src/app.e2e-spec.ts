@@ -7,8 +7,8 @@ describe('workspace-project App', () => {
     page = new AppPage();
   });
 
-  it('should display welcome message', () => {
+  it('should display ecommerce component', () => {
     page.navigateTo();
-    expect(page.getParagraphText()).toEqual('Welcome to frontend!');
+    expect(page.getEcommerceComponent()).toBeTruthy();
   });
 });

@@ -29,13 +29,12 @@ describe('EcommerceComponent', () => {
     })
     .compileComponents();
 
-    httpMock = TestBed.inject(HttpTestingController);
+    httpMock = TestBed.get(HttpTestingController);
   }));
 
   beforeEach(() => {
     fixture = TestBed.createComponent(EcommerceComponent);
     component = fixture.componentInstance;
-    // Мокаем запрос к /api/products
     const req = httpMock.expectOne('http://localhost:9876/api/products');
     req.flush([]);
     fixture.detectChanges();

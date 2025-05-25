@@ -21,7 +21,7 @@ describe('ShoppingCartComponent', () => {
     })
     .compileComponents();
 
-    httpMock = TestBed.inject(HttpTestingController);
+    httpMock = TestBed.get(HttpTestingController);
   }));
 
   beforeEach(() => {
