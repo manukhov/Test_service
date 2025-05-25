@@ -16,10 +16,10 @@ jobs:
         working-directory: ./backend
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Обновляем до v4 для стабильности
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4 # Обновляем до v4
         with:
           distribution: temurin
           java-version: '17'
@@ -36,12 +36,13 @@ jobs:
       run:
         working-directory: ./frontend
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4 # Обновляем до v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4 # Обновляем до v4
         with:
-          node-version: '12' # Angular 6 работает с Node 12
+          node-version: '12' # Оставляем Node 12 для Angular 6
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -55,7 +56,7 @@ jobs:
         run: npm ci
 
       - name: Check test files
-        run: ls -la src/**/*.spec.ts # Проверяем наличие тестов
+        run: ls -la src/**/*.spec.ts # Проверяем наличие тестовых файлов
 
       - name: Debug Karma and Chrome
         run: |
@@ -70,7 +71,21 @@ jobs:
           CHROME_BIN: /usr/bin/google-chrome
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 # Обновляем до v4
+        if: always() # Выполняем даже при ошибке предыдущего шага
         with:
           name: coverage-report
           path: frontend/coverage
+          retention-days: 7 # Храним артефакт 7 дней
+
+      - name: Fallback coverage output
+        if: failure() # Выполняем, если предыдущие шаги упали
+        run: |
+          echo "Coverage report generation status:"
+          if [ -d "frontend/coverage" ]; then
+            echo "Coverage report generated. Listing files:"
+            ls -la frontend/coverage
+            cat frontend/coverage/lcov-report/index.html || echo "No index.html found"
+          else
+            echo "No coverage report generated."
+          fi
