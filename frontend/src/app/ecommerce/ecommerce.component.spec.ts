@@ -6,6 +6,8 @@ import { OrdersComponent } from './orders/orders.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { EcommerceService } from './services/EcommerceService';
+import { ProductOrders } from './models/product-orders.model';
+import { of } from 'rxjs';
 
 describe('EcommerceComponent', () => {
   let component: EcommerceComponent;
@@ -14,7 +16,13 @@ describe('EcommerceComponent', () => {
 
   beforeEach(async(() => {
     const ecommerceServiceSpy = jasmine.createSpyObj('EcommerceService', ['getAllProducts']);
-    ecommerceServiceSpy.getAllProducts.and.returnValue({ subscribe: () => {} });
+    ecommerceServiceSpy.getAllProducts.and.returnValue(of([]));
+    ecommerceServiceSpy.ProductOrders = new ProductOrders();
+    ecommerceServiceSpy.SelectedProductOrder = null;
+    ecommerceServiceSpy.OrdersChanged = of();
+    ecommerceServiceSpy.ProductOrderChanged = of();
+    ecommerceServiceSpy.TotalChanged = of();
+
     TestBed.configureTestingModule({
       declarations: [
         EcommerceComponent,

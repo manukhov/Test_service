@@ -18,6 +18,7 @@ describe('ShoppingCartComponent', () => {
     ecommerceServiceSpy.SelectedProductOrder = null;
     ecommerceServiceSpy.OrdersChanged = of();
     ecommerceServiceSpy.ProductOrderChanged = of();
+    ecommerceServiceSpy.TotalChanged = of();
 
     TestBed.configureTestingModule({
       declarations: [ShoppingCartComponent],

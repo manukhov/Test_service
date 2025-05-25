@@ -3,6 +3,8 @@ import { OrdersComponent } from './orders.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { EcommerceService } from '../services/EcommerceService';
+import { ProductOrders } from '../models/product-orders.model';
+import { of } from 'rxjs';
 
 describe('OrdersComponent', () => {
   let component: OrdersComponent;
@@ -10,6 +12,16 @@ describe('OrdersComponent', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async(() => {
+    const ecommerceServiceSpy = jasmine.createSpyObj('EcommerceService', ['getAllProducts', 'saveOrder']);
+    ecommerceServiceSpy.getAllProducts.and.returnValue(of([]));
+    ecommerceServiceSpy.saveOrder.and.returnValue(of({}));
+    ecommerceServiceSpy.ProductOrders = new ProductOrders();
+    ecommerceServiceSpy.SelectedProductOrder = null;
+    ecommerceServiceSpy.OrdersChanged = of();
+    ecommerceServiceSpy.ProductOrderChanged = of();
+    ecommerceServiceSpy.TotalChanged = of();
+    ecommerceServiceSpy.Total = 0;
+
     TestBed.configureTestingModule({
       declarations: [OrdersComponent],
       imports: [
@@ -17,7 +29,7 @@ describe('OrdersComponent', () => {
         ReactiveFormsModule,
         HttpClientTestingModule
       ],
-      providers: [EcommerceService]
+      providers: [{ provide: EcommerceService, useValue: ecommerceServiceSpy }]
     })
     .compileComponents();
 
