@@ -46,6 +46,9 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Clear npm cache
+        run: npm cache clean --force # Очищаем кэш
+
       - name: Install ChromeHeadless
         run: |
           sudo apt-get update
@@ -55,8 +58,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check test files
-        run: ls -la src/**/*.spec.ts # Проверяем наличие тестов
+      - name: List test files
+        run: find src/app -name "*.spec.ts" # Проверяем файлы
 
       - name: Debug Karma and Chrome
         run: |
@@ -65,34 +68,24 @@ jobs:
           npx ng version
 
       - name: Run frontend tests
-        continue-on-error: true # Игнорируем ошибки тестов
         run: npx ng test --browsers=ChromeHeadless --watch=false
         env:
           CHROME_BIN: /usr/bin/google-chrome
 
       - name: Check test results
-        if: always() # Выполняем даже при ошибке
+        if: always()
         run: |
           echo "Test results summary:"
-          if [ -f "test-results.xml" ]; then
-            cat test-results.xml || echo "No test-results.xml found"
-          else
-            echo "No test results file generated."
-          fi
           if [ -d "coverage" ]; then
             echo "Coverage report generated. Listing files:"
             ls -la coverage
+            if [ -f "coverage/lcov.info" ]; then
+              echo "Coverage summary:"
+              cat coverage/lcov.info | grep -E '^(SF|LF|LH)' || echo "No coverage data"
+            fi
           else
             echo "No coverage report generated."
           fi
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results
-          path: frontend/test-results.xml
-          retention-days: 7
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
