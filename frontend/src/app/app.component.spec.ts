@@ -14,13 +14,15 @@ describe('AppComponent', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async(() => {
-    const ecommerceServiceSpy = jasmine.createSpyObj('EcommerceService', ['getAllProducts']);
+    const ecommerceServiceSpy = jasmine.createSpyObj('EcommerceService', ['getAllProducts', 'saveOrder']);
     ecommerceServiceSpy.getAllProducts.and.returnValue(of([]));
+    ecommerceServiceSpy.saveOrder.and.returnValue(of({}));
     ecommerceServiceSpy.ProductOrders = new ProductOrders();
     ecommerceServiceSpy.SelectedProductOrder = null;
     ecommerceServiceSpy.OrdersChanged = of();
     ecommerceServiceSpy.ProductOrderChanged = of();
     ecommerceServiceSpy.TotalChanged = of();
+    ecommerceServiceSpy.Total = 0;
 
     TestBed.configureTestingModule({
       declarations: [
@@ -43,13 +45,14 @@ describe('AppComponent', () => {
 
   afterEach(() => {
     httpMock.verify();
+    httpMock.expectNone('/api/products');
     TestBed.createComponent(AppComponent).destroy();
   });
 
   it('should create the app', async(() => {
     const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
     const app = fixture.debugElement.componentInstance;
+    fixture.detectChanges();
     expect(app).toBeTruthy();
   }));
 
