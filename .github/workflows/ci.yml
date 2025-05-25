@@ -91,6 +91,9 @@ jobs:
         env:
           CI: true
 
+      - name: Wait for server
+        run: sleep 10
+
       - name: Run E2E tests
         run: npx ng e2e
         env:

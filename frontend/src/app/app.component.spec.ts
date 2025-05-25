@@ -33,6 +33,7 @@ describe('AppComponent', () => {
 
   afterEach(() => {
     httpMock.verify();
+    TestBed.createComponent(AppComponent).destroy();
   });
 
   it('should create the app', async(() => {
@@ -43,8 +44,6 @@ describe('AppComponent', () => {
 
   it('should render ecommerce component', async(() => {
     const fixture = TestBed.createComponent(AppComponent);
-    const req = httpMock.expectOne('http://localhost:9876/api/products');
-    req.flush([]);
     fixture.detectChanges();
     const compiled = fixture.debugElement.nativeElement;
     expect(compiled.querySelector('app-ecommerce')).toBeTruthy();

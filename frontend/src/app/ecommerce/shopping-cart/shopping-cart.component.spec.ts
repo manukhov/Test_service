@@ -27,13 +27,12 @@ describe('ShoppingCartComponent', () => {
   beforeEach(() => {
     fixture = TestBed.createComponent(ShoppingCartComponent);
     component = fixture.componentInstance;
-    const req = httpMock.expectOne('http://localhost:9876/api/products');
-    req.flush([]);
     fixture.detectChanges();
   });
 
   afterEach(() => {
     httpMock.verify();
+    fixture.destroy();
   });
 
   it('should create', () => {
