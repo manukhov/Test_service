@@ -61,9 +61,9 @@ jobs:
         run: |
           npx karma --version
           google-chrome --version
-          ng version
+          npx ng version # Используем npx для Angular CLI
 
       - name: Run frontend tests
-        run: ng test --browsers=ChromeHeadless --watch=false
+        run: npx ng test --browsers=ChromeHeadless --watch=false
         env:
           CHROME_BIN: /usr/bin/google-chrome
