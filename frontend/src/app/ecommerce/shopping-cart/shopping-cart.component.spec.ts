@@ -3,6 +3,8 @@ import { ShoppingCartComponent } from './shopping-cart.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { EcommerceService } from '../services/EcommerceService';
+import { ProductOrders } from '../models/product-orders.model';
+import { of } from 'rxjs';
 
 describe('ShoppingCartComponent', () => {
   let component: ShoppingCartComponent;
@@ -10,7 +12,12 @@ describe('ShoppingCartComponent', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async(() => {
-    const ecommerceServiceSpy = jasmine.createSpyObj('EcommerceService', ['getAllProducts']);
+    const ecommerceServiceSpy = jasmine.createSpyObj('EcommerceService', ['getAllProducts'], {
+      ProductOrders: new ProductOrders(),
+      SelectedProductOrder: null,
+      OrdersChanged: of(),
+      ProductOrderChanged: of()
+    });
     TestBed.configureTestingModule({
       declarations: [ShoppingCartComponent],
       imports: [
