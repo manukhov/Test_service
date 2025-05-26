@@ -39,17 +39,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '16'
-          cache: 'npm-cache'
+          cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
       - name: Clear npm cache
         run: npm cache clean --force
+      - name: Remove google-chrome-stable
+        run: |
+          sudo apt-get remove -y google-chrome-stable || true
+          sudo apt-get autoremove -y
       - name: Install Chromium dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libdouble-conversion3 libminizip1t64 libnss3 libxss1 libasound2 libssl3
+          sudo apt-get install -y libdouble-conversion3 libminizip1t64 libnss3 libxss1 libasound2 libgtk-3-0 libgbm1 libu2f-udev
       - name: Install Chromium
         run: |
-          wget http://ftp.rudebian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb || wget http://deb.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb
+          wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb || wget http://deb.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb
           ls -l chromium_136.0.7103.113-1_amd64.deb
           sudo dpkg -i chromium_136.0.7103.113-1_amd64.deb || sudo apt-get -f install -y
           echo "CHROME_BIN=/usr/bin/chromium" >> $GITHUB_ENV
@@ -57,6 +61,7 @@ jobs:
         run: |
           dpkg -l | grep chromium || echo "Chromium not installed"
           ls -l /usr/bin/chromium || echo "Chromium binary not found"
+          ls -l /usr/lib/chromium/chromedriver || echo "ChromeDriver not found"
           chromium --version || echo "Chromium not executable"
       - name: Install dependencies
         run: npm ci
