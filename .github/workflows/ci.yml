@@ -62,7 +62,8 @@ jobs:
 
       - name: Установить CHROME_BIN из Puppeteer
         run: |
-          echo "CHROME_BIN=$(node -e \"console.log(require('puppeteer').executablePath())\")" >> $GITHUB_ENV
+          CHROME_BIN=$(node -e "console.log(require('puppeteer').executablePath())")
+          echo "CHROME_BIN=$CHROME_BIN" >> $GITHUB_ENV
 
       - name: Debug Chromium и ChromeDriver
         run: |
