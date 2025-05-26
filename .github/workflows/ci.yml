@@ -32,8 +32,6 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
-    container:
-      image: debian:bookworm
     defaults:
       run:
         working-directory: ./frontend
@@ -53,8 +51,8 @@ jobs:
 
       - name: Install dependencies for Chromium and tools
         run: |
-          apt-get update
-          apt-get install -y libnss3 libxss1 libasound2 libatk-bridge2.0-0 libgtk-3-0 libgbm1 wget gdebi-core
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libxss1 libasound2 libatk-bridge2.0-0 libgtk-3-0 libgbm1 wget gdebi-core
 
       - name: Download Chromium and ChromeDriver debs
         run: |
@@ -63,8 +61,8 @@ jobs:
 
       - name: Install Chromium and ChromeDriver
         run: |
-          gdebi --non-interactive chromium_136.0.7103.113-1_amd64.deb
-          gdebi --non-interactive chromium-driver_136.0.7103.113-1_amd64.deb
+          sudo gdebi --non-interactive chromium_136.0.7103.113-1_amd64.deb
+          sudo gdebi --non-interactive chromium-driver_136.0.7103.113-1_amd64.deb
           echo "CHROME_BIN=/usr/bin/chromium" >> $GITHUB_ENV
 
       - name: Debug Chromium installation
@@ -142,6 +140,7 @@ jobs:
             echo "Coverage report generated. Listing files:"
             ls -la coverage
             if [ -f "coverage/lcov.info" ]; then
+              echo "Coverage summary:"
               grep -E '^(SF|LF|LH)' coverage/lcov.info || echo "No coverage data"
             fi
           else
