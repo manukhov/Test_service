@@ -10,123 +10,130 @@ on:
 
 jobs:
   backend:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./backend
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
       - name: Build backend
         run: mvn clean package
+
       - name: Run backend tests
         run: mvn test
 
   frontend:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm
     defaults:
       run:
         working-directory: ./frontend
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '16'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
+
       - name: Clear npm cache
         run: npm cache clean --force
-      - name: Remove google-chrome-stable if present
+
+      - name: Install dependencies for Chromium and tools
         run: |
-          sudo apt-get remove -y google-chrome-stable || true
-          sudo apt-get autoremove -y
-      - name: Install gdebi and dependencies for Chromium
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gdebi-core libdouble-conversion3 libminizip1t64 libnss3 libxss1 libasound2t64 libgtk-3-0 libgbm1 libu2f-udev
-      - name: Try to install Chromium and ChromeDriver from sid repos (if available)
-        run: |
-          echo "deb http://deb.debian.org/debian sid main" | sudo tee /etc/apt/sources.list.d/sid.list
-          sudo apt-get update
-          sudo apt-get -t sid install -y chromium chromium-driver || echo "Sid install failed, fallback to manual .deb"
-      - name: Fallback: Download and install Chromium and ChromeDriver .deb packages
-        if: failure()
+          apt-get update
+          apt-get install -y libnss3 libxss1 libasound2t64 libatk-bridge2.0-0 libgtk-3-0 libgbm1 wget gdebi-core
+
+      - name: Download Chromium and ChromeDriver debs
         run: |
           wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb
           wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium-driver_136.0.7103.113-1_amd64.deb
-          sudo gdebi --non-interactive chromium_136.0.7103.113-1_amd64.deb
-          sudo gdebi --non-interactive chromium-driver_136.0.7103.113-1_amd64.deb
+
+      - name: Install Chromium and ChromeDriver
+        run: |
+          gdebi --non-interactive chromium_136.0.7103.113-1_amd64.deb
+          gdebi --non-interactive chromium-driver_136.0.7103.113-1_amd64.deb
+          echo "CHROME_BIN=/usr/bin/chromium" >> $GITHUB_ENV
+
       - name: Debug Chromium installation
         run: |
-          dpkg -l | grep chromium || echo "Chromium not installed"
-          ls -l /usr/bin/chromium || echo "Chromium binary not found"
-          ls -l /usr/lib/chromium/chromedriver || echo "ChromeDriver not found"
-          chromium --version || echo "Chromium not executable"
-      - name: Install dependencies
+          which chromium || echo "Chromium not found"
+          chromium --version || echo "Chromium version check failed"
+          which chromedriver || echo "ChromeDriver not found"
+          chromedriver --version || echo "ChromeDriver version check failed"
+
+      - name: Install npm dependencies
         run: npm ci
+
       - name: Install Protractor globally
         run: npm install -g protractor
-      - name: Copy ChromeDriver to webdriver-manager folder
+
+      - name: Copy ChromeDriver to Protractor webdriver-manager folder
         run: |
           mkdir -p node_modules/protractor/node_modules/webdriver-manager/selenium
-          sudo cp /usr/lib/chromium/chromedriver node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
-          sudo chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
-      - name: Debug Chromium and ChromeDriver versions
+          cp $(which chromedriver) node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
+          chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
+
+      - name: Debug ChromeDriver
         run: |
-          chromium --version || echo "Chromium not found"
-          node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113 --version || echo "ChromeDriver not found"
-      - name: Debug WebDriver files
-        run: ls -la node_modules/protractor/node_modules/webdriver-manager/selenium
+          ls -l node_modules/protractor/node_modules/webdriver-manager/selenium
+          node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113 --version
+
       - name: List test files
         run: |
           echo "Unit test files:"
           find src/app -name "*.spec.ts"
           echo "E2E test files:"
           find e2e/src -name "*.e2e-spec.ts"
-      - name: Debug Karma and Chromium
-        run: |
-          npx karma --version
-          chromium --version || echo "Chromium not found"
-          npx ng version
-          protractor --version
-      - name: Build project
+
+      - name: Build Angular project
         run: npx ng build
+
       - name: Run unit tests
         run: npx ng test --browsers=ChromiumHeadless --watch=false
         env:
           CHROME_BIN: /usr/bin/chromium
-      - name: Kill existing processes on port 7860
-        run: |
-          fuser -k 7860/tcp || true
-      - name: Kill existing processes on port 8080
-        run: |
-          fuser -k 8080/tcp || true
-      - name: Start backend
+          CI: true
+
+      - name: Kill processes on port 7860
+        run: fuser -k 7860/tcp || true
+
+      - name: Kill processes on port 8080
+        run: fuser -k 8080/tcp || true
+
+      - name: Start backend Spring Boot app
         run: |
           cd ../backend
           mvn spring-boot:run &
           sleep 10
-      - name: Debug backend port
-        run: lsof -i :8080 || echo "Port 8080 is free"
-      - name: Start server for E2E tests
+
+      - name: Start Angular dev server for E2E tests
         run: |
           npx ng serve --port 7860 --proxy-config proxy-conf.json &
           echo "E2E_BASE_URL=http://localhost:7860/" >> $GITHUB_ENV
         env:
           CI: true
-      - name: Wait for server
+
+      - name: Wait for Angular server to start
         run: sleep 10
+
       - name: Run E2E tests
         run: npx ng e2e
         env:
           CHROME_BIN: /usr/bin/chromium
+
       - name: Check test results
         if: always()
         run: |
@@ -135,12 +142,12 @@ jobs:
             echo "Coverage report generated. Listing files:"
             ls -la coverage
             if [ -f "coverage/lcov.info" ]; then
-              echo "Coverage summary:"
               grep -E '^(SF|LF|LH)' coverage/lcov.info || echo "No coverage data"
             fi
           else
             echo "No coverage report generated."
           fi
+
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         if: always()
