@@ -43,26 +43,25 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Clear npm cache
         run: npm cache clean --force
-      - name: Install ChromeHeadless
+      - name: Install Chromium
         run: |
           sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-          echo "CHROME_BIN=/usr/bin/google-chrome" >> $GITHUB_ENV
-      - name: Debug Chrome version
-        run: google-chrome --version
+          wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb
+          sudo dpkg -i chromium_136.0.7103.113-1_amd64.deb || sudo apt-get -f install -y
+          echo "CHROME_BIN=/usr/bin/chromium" >> $GITHUB_ENV
+      - name: Debug Chromium version
+        run: chromium --version
       - name: Install dependencies
         run: npm ci
       - name: Install Protractor
         run: npm install -g protractor
-      - name: Install ChromeDriver via .deb package
+      - name: Install ChromeDriver
         run: |
-          wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium-driver_136.0.7103.113-1_amd64.deb
-          sudo dpkg -i chromium-driver_136.0.7103.113-1_amd64.deb || sudo apt-get -f install -y
           sudo cp /usr/lib/chromium/chromedriver node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
           sudo chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
-      - name: Debug Chrome and ChromeDriver
+      - name: Debug Chromium and ChromeDriver
         run: |
-          google-chrome --version
+          chromium --version
           node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113 --version || echo "ChromeDriver not found"
       - name: Debug WebDriver
         run: ls -la node_modules/protractor/node_modules/webdriver-manager/selenium
@@ -72,21 +71,21 @@ jobs:
           find src/app -name "*.spec.ts"
           echo "E2E test files:"
           find e2e/src -name "*.e2e-spec.ts"
-      - name: Debug Karma and Chrome
+      - name: Debug Karma and Chromium
         run: |
           npx karma --version
-          google-chrome --version
+          chromium --version
           npx ng version
           protractor --version
       - name: Build project
         run: npx ng build
       - name: Run unit tests
-        run: npx ng test --browsers=ChromeHeadless --watch=false
+        run: npx ng test --browsers=ChromiumHeadless --watch=false
         env:
-          CHROME_BIN: /usr/bin/google-chrome
-      - name: Kill existing processes on port 4200
+          CHROME_BIN: /usr/bin/chromium
+      - name: Kill existing processes on port 7860
         run: |
-          fuser -k 4200/tcp || true
+          fuser -k 7860/tcp || true
       - name: Kill existing processes on port 8080
         run: |
           fuser -k 8080/tcp || true
@@ -108,7 +107,7 @@ jobs:
       - name: Run E2E tests
         run: npx ng e2e
         env:
-          CHROME_BIN: /usr/bin/google-chrome
+          CHROME_BIN: /usr/bin/chromium
       - name: Check test results
         if: always()
         run: |
