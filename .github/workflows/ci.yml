@@ -50,7 +50,7 @@ jobs:
       - name: Install Chromium dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libdouble-conversion3 libminizip1t64 libnss3 libxss1 libasound2 libgtk-3-0 libgbm1 libu2f-udev
+          sudo apt-get install -y libdouble-conversion3 libminizip1t64 libnss3 libxss1 libasound2t64 libgtk-3-0 libgbm1 libu2f-udev
       - name: Install Chromium
         run: |
           wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb || wget http://deb.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb
