@@ -52,7 +52,7 @@ jobs:
       - name: Install dependencies for Chromium and tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y libnss3 libxss1 libasound2t64 libatk-bridge2.0-0 libgtk-3-0 libgbm1 wget gdebi-core libflac14
+          sudo apt-get install -y libnss3 libxss1 libasound2t64 libatk-bridge2.0-0 libgtk-3-0 libgbm1 wget gdebi-core libflac8
 
       - name: Download Chromium and ChromeDriver debs
         run: |
