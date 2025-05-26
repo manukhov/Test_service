@@ -56,14 +56,14 @@ jobs:
         run: npm install -g protractor
       - name: Install ChromeDriver manually
         run: |
-          curl -o chromedriver.zip https://storage.googleapis.com/chrome-for-testing-public/126.0.6478.126/linux64/chromedriver-linux64.zip
+          curl -o chromedriver.zip https://storage.googleapis.com/chrome-for-testing-public/135.0.7052.81/linux64/chromedriver-linux64.zip
           unzip chromedriver.zip -d node_modules/protractor/node_modules/webdriver-manager/selenium/
-          mv node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver-linux64/chromedriver node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_126.0.6478.126
-          chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_126.0.6478.126
+          mv node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver-linux64/chromedriver node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_135.0.7052.81
+          chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_135.0.7052.81
       - name: Debug Chrome and ChromeDriver
         run: |
           google-chrome --version
-          node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_126.0.6478.126 --version
+          node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_135.0.7052.81 --version || echo "ChromeDriver not found"
       - name: Debug WebDriver
         run: ls -la node_modules/protractor/node_modules/webdriver-manager/selenium
       - name: List test files
@@ -92,6 +92,8 @@ jobs:
           cd ../backend
           mvn spring-boot:run &
           sleep 10
+      - name: Debug backend port
+        run: lsof -i :8080 || echo "Port 8080 is free"
       - name: Start server for E2E tests
         run: |
           npx ng serve --port 0 --proxy-config proxy-conf.json &
