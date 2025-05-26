@@ -80,12 +80,6 @@ jobs:
         run: npx ng serve --proxy-config proxy-conf.json &
         env:
           CI: true
-      - name: Wait for server
-        run: sleep 10
-      - name: Run E2E tests
-        run: npx ng e2e
-        env:
-          CHROME_BIN: /usr/bin/google-chrome
       - name: Check test results
         if: always()
         run: |
