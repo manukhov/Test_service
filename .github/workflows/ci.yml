@@ -50,7 +50,7 @@ jobs:
       - name: Install Chromium + ChromeDriver (v85)
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget gdebi-core libnss3 libxss1 libasound2 libatk-bridge2.0-0 libgtk-3-0 libgbm1
+          sudo apt-get install -y wget gdebi-core libnss3 libxss1 libasound2t64 libatk-bridge2.0-0 libgtk-3-0 libgbm1
 
           wget http://security.ubuntu.com/ubuntu/pool/universe/c/chromium-browser/chromium-chromedriver_85.0.4183.83-0ubuntu2.22.04.1_amd64.deb
           wget http://security.ubuntu.com/ubuntu/pool/universe/c/chromium-browser/chromium-browser_85.0.4183.83-0ubuntu2.22.04.1_amd64.deb
