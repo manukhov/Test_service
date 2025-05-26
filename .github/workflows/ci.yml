@@ -20,7 +20,7 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
       - name: Build backend
         run: mvn clean package
@@ -57,8 +57,14 @@ jobs:
       - name: Check ChromeDriver availability
         run: curl -I https://chromedriver.storage.googleapis.com/126.0.6478.62/chromedriver_linux64.zip
       - name: Update WebDriver
-        run: npx webdriver-manager update --gecko false --versions.chrome=126.0.6478.62
-        # Альтернатива: npx webdriver-manager update --gecko false
+        run: npx webdriver-manager update --gecko false
+      # Запасной вариант:
+      # - name: Install ChromeDriver manually
+      #   run: |
+      #     curl -o chromedriver.zip https://chromedriver.storage.googleapis.com/126.0.6478.62/chromedriver_linux64.zip
+      #     unzip chromedriver.zip -d node_modules/protractor/node_modules/webdriver-manager/selenium/
+      #     mv node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_126.0.6478.62 node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver
+      #     chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver
       - name: Debug WebDriver
         run: ls -la node_modules/protractor/node_modules/webdriver-manager/selenium
       - name: List test files
