@@ -2,9 +2,11 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   backend:
@@ -15,16 +17,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Build backend
         run: mvn clean package
-
       - name: Run backend tests
         run: mvn test
 
@@ -36,96 +35,94 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '16'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
-
       - name: Clear npm cache
         run: npm cache clean --force
-
-      - name: Install Chromium + ChromeDriver (v85)
+      - name: Install Chrome
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget gdebi-core libnss3 libxss1 libasound2t64 libatk-bridge2.0-0 libgtk-3-0 libgbm1
-
-          wget http://security.ubuntu.com/ubuntu/pool/universe/c/chromium-browser/chromium-chromedriver_85.0.4183.83-0ubuntu2.22.04.1_amd64.deb
-          wget http://security.ubuntu.com/ubuntu/pool/universe/c/chromium-browser/chromium-browser_85.0.4183.83-0ubuntu2.22.04.1_amd64.deb
-
-          sudo gdebi --non-interactive chromium-browser_85.0.4183.83-0ubuntu2.22.04.1_amd64.deb
-          sudo gdebi --non-interactive chromium-chromedriver_85.0.4183.83-0ubuntu2.22.04.1_amd64.deb
-
-          echo "CHROME_BIN=/usr/lib/chromium-browser/chromium-browser" >> $GITHUB_ENV
-          echo "CHROMEDRIVER_BIN=/usr/lib/chromium-browser/chromedriver" >> $GITHUB_ENV
-
-      - name: Debug Chrome install
-        run: |
-          $CHROME_BIN --version || echo "Chromium version check failed"
-          $CHROMEDRIVER_BIN --version || echo "ChromeDriver version check failed"
-
+          sudo apt-get install -y google-chrome-stable
+          echo "CHROME_BIN=/usr/bin/google-chrome" >> $GITHUB_ENV
+      - name: Debug Chrome version
+        run: google-chrome --version
       - name: Install dependencies
         run: npm ci
-
       - name: Install Protractor
         run: npm install -g protractor
-
-      - name: Copy ChromeDriver to Protractor
+      - name: Install ChromeDriver via ZIP
         run: |
-          mkdir -p node_modules/protractor/node_modules/webdriver-manager/selenium
-          cp $CHROMEDRIVER_BIN node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_85.0.4183.83
-          chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_85.0.4183.83
-
+          curl -o chromedriver.zip https://storage.googleapis.com/chrome-for-testing-public/136.0.7103.113/linux64/chromedriver-linux64.zip
+          unzip chromedriver.zip -d node_modules/protractor/node_modules/webdriver-manager/selenium/
+          mv node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver-linux64/chromedriver node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
+          chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
+      - name: Debug Chrome and ChromeDriver
+        run: |
+          google-chrome --version
+          node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113 --version || echo "ChromeDriver not found"
+      - name: Debug WebDriver
+        run: ls -la node_modules/protractor/node_modules/webdriver-manager/selenium
+      - name: List test files
+        run: |
+          echo "Unit test files:"
+          find src/app -name "*.spec.ts"
+          echo "E2E test files:"
+          find e2e/src -name "*.e2e-spec.ts"
+      - name: Debug Karma and Chrome
+        run: |
+          npx karma --version
+          google-chrome --version
+          npx ng version
+          protractor --version
       - name: Build project
         run: npx ng build
-
       - name: Run unit tests
-        run: npx ng test --browsers=ChromiumHeadless --watch=false
+        run: npx ng test --browsers=ChromeHeadless --watch=false
         env:
-          CHROME_BIN: ${{ env.CHROME_BIN }}
-          CI: true
-
-      - name: Kill existing backend ports
+          CHROME_BIN: /usr/bin/google-chrome
+      - name: Kill existing processes on port 7860
         run: |
           fuser -k 7860/tcp || true
+      - name: Kill existing processes on port 8080
+        run: |
           fuser -k 8080/tcp || true
-
       - name: Start backend
         run: |
           cd ../backend
           mvn spring-boot:run &
           sleep 10
-
-      - name: Start frontend dev server
+      - name: Debug backend port
+        run: lsof -i :8080 || echo "Port 8080 is free"
+      - name: Start server for E2E tests
         run: |
           npx ng serve --port 7860 --proxy-config proxy-conf.json &
           echo "E2E_BASE_URL=http://localhost:7860/" >> $GITHUB_ENV
         env:
           CI: true
-
-      - name: Wait for frontend
+      - name: Wait for server
         run: sleep 10
-
       - name: Run E2E tests
         run: npx ng e2e
         env:
-          CHROME_BIN: ${{ env.CHROME_BIN }}
-
+          CHROME_BIN: /usr/bin/google-chrome
       - name: Check test results
         if: always()
         run: |
           echo "Test results summary:"
           if [ -d "coverage" ]; then
+            echo "Coverage report generated. Listing files:"
             ls -la coverage
             if [ -f "coverage/lcov.info" ]; then
-              grep -E '^(SF|LF|LH)' coverage/lcov.info || echo "No coverage data"
+              echo "Coverage summary:"
+              cat coverage/lcov.info | grep -E '^(SF|LF|LH)' || echo "No coverage data"
             fi
           else
             echo "No coverage report generated."
           fi
-
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         if: always()
