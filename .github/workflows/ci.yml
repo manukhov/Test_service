@@ -52,12 +52,6 @@ jobs:
         run: google-chrome --version
       - name: Install dependencies
         run: npm ci
-      - name: Install Protractor
-        run: npm install -g protractor-cli
-      - name: Update WebDriver
-        run: npx webdriver-manager update --gecko false --versions.chrome=126.0.6478
-      - name: Debug WebDriver
-        run: ls -la node_modules/protractor/node_modules/webdriver-manager/selenium
       - name: List test files
         run: |
           echo "Unit test files:"
