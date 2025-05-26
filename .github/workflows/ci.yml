@@ -20,7 +20,7 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: '17'
       - name: Build backend
         run: mvn clean package
@@ -39,8 +39,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '16'
-          cache: npm
-          cache-dependency-path: frontend/package.json
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
       - name: Clear npm cache
         run: npm cache clean --force
       - name: Install ChromeHeadless
@@ -52,6 +52,15 @@ jobs:
         run: google-chrome --version
       - name: Install dependencies
         run: npm ci
+      - name: Install Protractor
+        run: npm install -g protractor
+      - name: Check ChromeDriver availability
+        run: curl -I https://chromedriver.storage.googleapis.com/126.0.6478.62/chromedriver_linux64.zip
+      - name: Update WebDriver
+        run: npx webdriver-manager update --gecko false --versions.chrome=126.0.6478.62
+        # Альтернатива: npx webdriver-manager update --gecko false
+      - name: Debug WebDriver
+        run: ls -la node_modules/protractor/node_modules/webdriver-manager/selenium
       - name: List test files
         run: |
           echo "Unit test files:"
@@ -60,7 +69,7 @@ jobs:
           find e2e/src -name "*.e2e-spec.ts"
       - name: Debug Karma and Chrome
         run: |
-          npx karma start --version
+          npx karma --version
           google-chrome --version
           npx ng version
           protractor --version
@@ -74,6 +83,12 @@ jobs:
         run: npx ng serve --proxy-config proxy-conf.json &
         env:
           CI: true
+      - name: Wait for server
+        run: sleep 10
+      - name: Run E2E tests
+        run: npx ng e2e
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
       - name: Check test results
         if: always()
         run: |
