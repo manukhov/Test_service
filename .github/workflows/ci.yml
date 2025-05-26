@@ -54,16 +54,16 @@ jobs:
         run: npm ci
       - name: Install Protractor
         run: npm install -g protractor
-      - name: Install ChromeDriver manually
+      - name: Install ChromeDriver via .deb package
         run: |
-          curl -o chromedriver.zip https://storage.googleapis.com/chrome-for-testing-public/135.0.7052.81/linux64/chromedriver-linux64.zip
-          unzip chromedriver.zip -d node_modules/protractor/node_modules/webdriver-manager/selenium/
-          mv node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver-linux64/chromedriver node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_135.0.7052.81
-          chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_135.0.7052.81
+          wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium-driver_136.0.7103.113-1_amd64.deb
+          sudo dpkg -i chromium-driver_136.0.7103.113-1_amd64.deb || sudo apt-get -f install -y
+          sudo cp /usr/lib/chromium/chromedriver node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
+          sudo chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
       - name: Debug Chrome and ChromeDriver
         run: |
           google-chrome --version
-          node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_135.0.7052.81 --version || echo "ChromeDriver not found"
+          node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113 --version || echo "ChromeDriver not found"
       - name: Debug WebDriver
         run: ls -la node_modules/protractor/node_modules/webdriver-manager/selenium
       - name: List test files
@@ -87,6 +87,9 @@ jobs:
       - name: Kill existing processes on port 4200
         run: |
           fuser -k 4200/tcp || true
+      - name: Kill existing processes on port 8080
+        run: |
+          fuser -k 8080/tcp || true
       - name: Start backend
         run: |
           cd ../backend
@@ -96,8 +99,8 @@ jobs:
         run: lsof -i :8080 || echo "Port 8080 is free"
       - name: Start server for E2E tests
         run: |
-          npx ng serve --port 0 --proxy-config proxy-conf.json &
-          echo "E2E_BASE_URL=http://localhost:$(lsof -i :4200-4299 -t | head -1)/" >> $GITHUB_ENV
+          npx ng serve --port 7860 --proxy-config proxy-conf.json &
+          echo "E2E_BASE_URL=http://localhost:7860/" >> $GITHUB_ENV
         env:
           CI: true
       - name: Wait for server
