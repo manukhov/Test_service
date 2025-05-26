@@ -39,18 +39,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '16'
-          cache: 'npm'
+          cache: 'npm-cache'
           cache-dependency-path: frontend/package-lock.json
       - name: Clear npm cache
         run: npm cache clean --force
-      - name: Install Chromium
+      - name: Install Chromium dependencies
         run: |
           sudo apt-get update
-          wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb
+          sudo apt-get install -y libdouble-conversion3 libminizip1t64 libnss3 libxss1 libasound2 libssl3
+      - name: Install Chromium
+        run: |
+          wget http://ftp.rudebian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb || wget http://deb.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb
+          ls -l chromium_136.0.7103.113-1_amd64.deb
           sudo dpkg -i chromium_136.0.7103.113-1_amd64.deb || sudo apt-get -f install -y
           echo "CHROME_BIN=/usr/bin/chromium" >> $GITHUB_ENV
-      - name: Debug Chromium version
-        run: chromium --version
+      - name: Debug Chromium installation
+        run: |
+          dpkg -l | grep chromium || echo "Chromium not installed"
+          ls -l /usr/bin/chromium || echo "Chromium binary not found"
+          chromium --version || echo "Chromium not executable"
       - name: Install dependencies
         run: npm ci
       - name: Install Protractor
@@ -61,7 +68,7 @@ jobs:
           sudo chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
       - name: Debug Chromium and ChromeDriver
         run: |
-          chromium --version
+          chromium --version || echo "Chromium not found"
           node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113 --version || echo "ChromeDriver not found"
       - name: Debug WebDriver
         run: ls -la node_modules/protractor/node_modules/webdriver-manager/selenium
@@ -74,7 +81,7 @@ jobs:
       - name: Debug Karma and Chromium
         run: |
           npx karma --version
-          chromium --version
+          chromium --version || echo "Chromium not found"
           npx ng version
           protractor --version
       - name: Build project
