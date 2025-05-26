@@ -2,11 +2,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   backend:
@@ -49,103 +47,79 @@ jobs:
       - name: Clear npm cache
         run: npm cache clean --force
 
-      - name: Install libflac14 manually
-        run: |
-          wget http://archive.ubuntu.com/ubuntu/pool/main/f/flac/libflac14_1.5.0+ds-2_amd64.deb
-          sudo dpkg -i libflac14_1.5.0+ds-2_amd64.deb || sudo apt-get install -f -y
-
-      - name: Install dependencies for Chromium and tools
+      - name: Install Chromium + ChromeDriver (v85)
         run: |
           sudo apt-get update
-          sudo apt-get install -y libnss3 libxss1 libasound2t64 libatk-bridge2.0-0 libgtk-3-0 libgbm1 wget gdebi-core
+          sudo apt-get install -y wget gdebi-core libnss3 libxss1 libasound2 libatk-bridge2.0-0 libgtk-3-0 libgbm1
 
-      - name: Download Chromium and ChromeDriver debs
+          wget http://security.ubuntu.com/ubuntu/pool/universe/c/chromium-browser/chromium-chromedriver_85.0.4183.83-0ubuntu2.22.04.1_amd64.deb
+          wget http://security.ubuntu.com/ubuntu/pool/universe/c/chromium-browser/chromium-browser_85.0.4183.83-0ubuntu2.22.04.1_amd64.deb
+
+          sudo gdebi --non-interactive chromium-browser_85.0.4183.83-0ubuntu2.22.04.1_amd64.deb
+          sudo gdebi --non-interactive chromium-chromedriver_85.0.4183.83-0ubuntu2.22.04.1_amd64.deb
+
+          echo "CHROME_BIN=/usr/lib/chromium-browser/chromium-browser" >> $GITHUB_ENV
+          echo "CHROMEDRIVER_BIN=/usr/lib/chromium-browser/chromedriver" >> $GITHUB_ENV
+
+      - name: Debug Chrome install
         run: |
-          wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb
-          wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium-driver_136.0.7103.113-1_amd64.deb
+          $CHROME_BIN --version || echo "Chromium version check failed"
+          $CHROMEDRIVER_BIN --version || echo "ChromeDriver version check failed"
 
-      - name: Install Chromium and ChromeDriver
-        run: |
-          sudo gdebi --non-interactive chromium_136.0.7103.113-1_amd64.deb
-          sudo gdebi --non-interactive chromium-driver_136.0.7103.113-1_amd64.deb
-          echo "CHROME_BIN=/usr/bin/chromium" >> $GITHUB_ENV
-
-      - name: Debug Chromium installation
-        run: |
-          which chromium || echo "Chromium not found"
-          chromium --version || echo "Chromium version check failed"
-          which chromedriver || echo "ChromeDriver not found"
-          chromedriver --version || echo "ChromeDriver version check failed"
-
-      - name: Install npm dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Install Protractor globally
+      - name: Install Protractor
         run: npm install -g protractor
 
-      - name: Copy ChromeDriver to Protractor webdriver-manager folder
+      - name: Copy ChromeDriver to Protractor
         run: |
           mkdir -p node_modules/protractor/node_modules/webdriver-manager/selenium
-          cp $(which chromedriver) node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
-          chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
+          cp $CHROMEDRIVER_BIN node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_85.0.4183.83
+          chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_85.0.4183.83
 
-      - name: Debug ChromeDriver
-        run: |
-          ls -l node_modules/protractor/node_modules/webdriver-manager/selenium
-          node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113 --version
-
-      - name: List test files
-        run: |
-          echo "Unit test files:"
-          find src/app -name "*.spec.ts"
-          echo "E2E test files:"
-          find e2e/src -name "*.e2e-spec.ts"
-
-      - name: Build Angular project
+      - name: Build project
         run: npx ng build
 
       - name: Run unit tests
         run: npx ng test --browsers=ChromiumHeadless --watch=false
         env:
-          CHROME_BIN: /usr/bin/chromium
+          CHROME_BIN: ${{ env.CHROME_BIN }}
           CI: true
 
-      - name: Kill processes on port 7860
-        run: fuser -k 7860/tcp || true
+      - name: Kill existing backend ports
+        run: |
+          fuser -k 7860/tcp || true
+          fuser -k 8080/tcp || true
 
-      - name: Kill processes on port 8080
-        run: fuser -k 8080/tcp || true
-
-      - name: Start backend Spring Boot app
+      - name: Start backend
         run: |
           cd ../backend
           mvn spring-boot:run &
           sleep 10
 
-      - name: Start Angular dev server for E2E tests
+      - name: Start frontend dev server
         run: |
           npx ng serve --port 7860 --proxy-config proxy-conf.json &
           echo "E2E_BASE_URL=http://localhost:7860/" >> $GITHUB_ENV
         env:
           CI: true
 
-      - name: Wait for Angular server to start
+      - name: Wait for frontend
         run: sleep 10
 
       - name: Run E2E tests
         run: npx ng e2e
         env:
-          CHROME_BIN: /usr/bin/chromium
+          CHROME_BIN: ${{ env.CHROME_BIN }}
 
       - name: Check test results
         if: always()
         run: |
           echo "Test results summary:"
           if [ -d "coverage" ]; then
-            echo "Coverage report generated. Listing files:"
             ls -la coverage
             if [ -f "coverage/lcov.info" ]; then
-              echo "Coverage summary:"
               grep -E '^(SF|LF|LH)' coverage/lcov.info || echo "No coverage data"
             fi
           else
