@@ -49,28 +49,28 @@ jobs:
       - name: Clear npm cache
         run: npm cache clean --force
 
-      - name: Remove google-chrome-stable
-        run: |
-          sudo apt-get remove -y google-chrome-stable || true
-          sudo apt-get autoremove -y
-
-      - name: Install Chromium dependencies
+      - name: Install Chromium and ChromeDriver on Debian
         run: |
           sudo apt-get update
-          sudo apt-get install -y libnss3 libxss1 libasound2 libatk-bridge2.0-0 libgtk-3-0 libgbm1 libu2f-udev
+          sudo apt-get install -y libnss3 libxss1 libasound2 libatk-bridge2.0-0 libgtk-3-0 libgbm1 wget gdebi-core
 
-      - name: Install Chromium and ChromeDriver
-        run: |
+          # Скачиваем Chromium и ChromeDriver
           wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb
           wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium-driver_136.0.7103.113-1_amd64.deb
-          sudo dpkg -i chromium_136.0.7103.113-1_amd64.deb || sudo apt-get -f install -y
-          sudo dpkg -i chromium-driver_136.0.7103.113-1_amd64.deb || sudo apt-get -f install -y
+
+          # Устанавливаем
+          sudo gdebi --non-interactive chromium_136.0.7103.113-1_amd64.deb
+          sudo gdebi --non-interactive chromium-driver_136.0.7103.113-1_amd64.deb
+
+          # Установка переменной окружения
           echo "CHROME_BIN=/usr/bin/chromium" >> $GITHUB_ENV
 
-      - name: Debug Chromium install
+      - name: Debug Chromium installation
         run: |
-          chromium --version || echo "Chromium not found"
-          /usr/lib/chromium-browser/chromedriver --version || echo "ChromeDriver not found"
+          which chromium || echo "Chromium not found"
+          chromium --version || echo "Chromium version check failed"
+          which chromedriver || echo "ChromeDriver not found"
+          chromedriver --version || echo "ChromeDriver version check failed"
 
       - name: Install dependencies
         run: npm ci
@@ -78,30 +78,38 @@ jobs:
       - name: Install Protractor
         run: npm install -g protractor
 
-      - name: Copy ChromeDriver to WebDriver Manager
+      - name: Copy ChromeDriver to Protractor directory
         run: |
           mkdir -p node_modules/protractor/node_modules/webdriver-manager/selenium
-          sudo cp /usr/lib/chromium-browser/chromedriver node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
-          sudo chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
+          cp $(which chromedriver) node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
+          chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
 
-      - name: Debug WebDriver
+      - name: Debug ChromeDriver
         run: |
-          chromium --version || echo "Chromium not found"
-          node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113 --version || echo "ChromeDriver not found"
-          ls -la node_modules/protractor/node_modules/webdriver-manager/selenium
+          ls -l node_modules/protractor/node_modules/webdriver-manager/selenium
+          node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113 --version
+
+      - name: List test files
+        run: |
+          echo "Unit test files:"
+          find src/app -name "*.spec.ts"
+          echo "E2E test files:"
+          find e2e/src -name "*.e2e-spec.ts"
 
       - name: Build project
         run: npx ng build
 
       - name: Run unit tests
-        run: npx ng test --browsers=ChromiumHeadless --watch=false --no-sandbox
+        run: npx ng test --browsers=ChromiumHeadless --watch=false
         env:
           CHROME_BIN: /usr/bin/chromium
+          CI: true
 
-      - name: Kill existing processes
-        run: |
-          fuser -k 7860/tcp || true
-          fuser -k 8080/tcp || true
+      - name: Kill existing processes on port 7860
+        run: fuser -k 7860/tcp || true
+
+      - name: Kill existing processes on port 8080
+        run: fuser -k 8080/tcp || true
 
       - name: Start backend
         run: |
@@ -109,9 +117,9 @@ jobs:
           mvn spring-boot:run &
           sleep 10
 
-      - name: Start Angular server for E2E
+      - name: Start server for E2E tests
         run: |
-          npx ng serve --port 7860 --proxy-config proxy-conf.json --no-sandbox &
+          npx ng serve --port 7860 --proxy-config proxy-conf.json &
           echo "E2E_BASE_URL=http://localhost:7860/" >> $GITHUB_ENV
         env:
           CI: true
@@ -133,7 +141,7 @@ jobs:
             ls -la coverage
             if [ -f "coverage/lcov.info" ]; then
               echo "Coverage summary:"
-              grep -E '^(SF|LF|LH)' coverage/lcov.info || echo "No coverage data"
+              cat coverage/lcov.info | grep -E '^(SF|LF|LH)' || echo "No coverage data"
             fi
           else
             echo "No coverage report generated."
