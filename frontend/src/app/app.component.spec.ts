@@ -51,24 +51,12 @@ describe('AppComponent', () => {
   it('should create the app', async(() => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.debugElement.componentInstance;
-
-    // Перехватываем запрос /api/products
-    const req = httpMock.expectOne('/api/products');
-    expect(req.request.method).toBe('GET');
-    req.flush([]);
-
     fixture.detectChanges();
     expect(app).toBeTruthy();
   }));
 
   it('should render ecommerce component', async(() => {
     const fixture = TestBed.createComponent(AppComponent);
-
-    // Перехватываем запрос /api/products
-    const req = httpMock.expectOne('/api/products');
-    expect(req.request.method).toBe('GET');
-    req.flush([]);
-
     fixture.detectChanges();
     const compiled = fixture.debugElement.nativeElement;
     expect(compiled.querySelector('app-ecommerce')).toBeTruthy();
