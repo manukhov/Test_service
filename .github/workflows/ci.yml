@@ -106,6 +106,9 @@ jobs:
           sleep 10
       - name: Debug backend port
         run: lsof -i :8080 || echo "Port 8080 is free"
+      - name: Debug backend API
+        run: |
+          curl -v http://localhost:8080/api/products || echo "Backend API not responding"
       - name: Start server for E2E tests
         run: |
           npx ng serve --port 7860 --proxy-config proxy-conf.json &
