@@ -17,16 +17,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Build backend
         run: mvn clean package
-
       - name: Run backend tests
         run: mvn test
 
@@ -49,27 +46,54 @@ jobs:
       - name: Clear npm cache
         run: npm cache clean --force
 
+      - name: Remove google-chrome-stable
+        run: |
+          sudo apt-get remove -y google-chrome-stable || true
+          sudo apt-get autoremove -y
+
+      - name: Install Chromium dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdouble-conversion3 libminizip1t64 libnss3 libxss1 libasound2t64 libgtk-3-0 libgbm1 libu2f-udev
+
+      - name: Install Chromium
+        run: |
+          wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb || wget http://deb.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb
+          ls -l chromium_136.0.7103.113-1_amd64.deb
+          sudo dpkg -i chromium_136.0.7103.113-1_amd64.deb || sudo apt-get -f install -y
+          echo "CHROME_BIN=/usr/bin/chromium" >> $GITHUB_ENV
+
+      - name: Install ChromiumDriver
+        run: |
+          wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium-driver_136.0.7103.113-1_amd64.deb
+          sudo dpkg -i chromium-driver_136.0.7103.113-1_amd64.deb || sudo apt-get -f install -y
+
+      - name: Debug Chromium installation
+        run: |
+          dpkg -l | grep chromium || echo "Chromium not installed"
+          ls -l /usr/bin/chromium || echo "Chromium binary not found"
+          ls -l /usr/lib/chromium/chromedriver || echo "ChromeDriver not found"
+          chromium --version || echo "Chromium not executable"
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Установка Puppeteer и Protractor
-        run: |
-          npm install -g protractor
-          npm install puppeteer
-          npx webdriver-manager update --gecko=false --standalone=false
-        env:
-          PUPPETEER_SKIP_DOWNLOAD: 'false'
+      - name: Install Protractor
+        run: npm install -g protractor
 
-      - name: Установить CHROME_BIN из Puppeteer
+      - name: Copy ChromeDriver to WebDriver Manager
         run: |
-          CHROME_BIN=$(node -e "console.log(require('puppeteer').executablePath())")
-          echo "CHROME_BIN=$CHROME_BIN" >> $GITHUB_ENV
+          mkdir -p node_modules/protractor/node_modules/webdriver-manager/selenium
+          sudo cp /usr/lib/chromium/chromedriver node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
+          sudo chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
 
-      - name: Debug Chromium и ChromeDriver
+      - name: Debug Chromium and ChromeDriver
         run: |
-          echo "CHROME_BIN: $CHROME_BIN"
-          $CHROME_BIN --version || echo "Chromium not executable"
-          node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_* --version || echo "ChromeDriver not found"
+          chromium --version || echo "Chromium not found"
+          node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113 --version || echo "ChromeDriver not found"
+
+      - name: Debug WebDriver
+        run: ls -la node_modules/protractor/node_modules/webdriver-manager/selenium
 
       - name: List test files
         run: |
@@ -78,9 +102,10 @@ jobs:
           echo "E2E test files:"
           find e2e/src -name "*.e2e-spec.ts"
 
-      - name: Debug Karma и Angular
+      - name: Debug Karma and Chromium
         run: |
           npx karma --version
+          chromium --version || echo "Chromium not found"
           npx ng version
           protractor --version
 
@@ -88,15 +113,17 @@ jobs:
         run: npx ng build
 
       - name: Run unit tests
-        run: npx ng test --browsers=ChromeHeadless --watch=false
+        run: npx ng test --browsers=ChromiumHeadless --watch=false
         env:
-          CHROME_BIN: ${{ env.CHROME_BIN }}
+          CHROME_BIN: /usr/bin/chromium
 
       - name: Kill existing processes on port 7860
-        run: fuser -k 7860/tcp || true
+        run: |
+          fuser -k 7860/tcp || true
 
       - name: Kill existing processes on port 8080
-        run: fuser -k 8080/tcp || true
+        run: |
+          fuser -k 8080/tcp || true
 
       - name: Start backend
         run: |
@@ -120,7 +147,7 @@ jobs:
       - name: Run E2E tests
         run: npx ng e2e
         env:
-          CHROME_BIN: ${{ env.CHROME_BIN }}
+          CHROME_BIN: /usr/bin/chromium
 
       - name: Check test results
         if: always()
@@ -135,6 +162,7 @@ jobs:
             fi
           else
             echo "No coverage report generated."
+          fi
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
