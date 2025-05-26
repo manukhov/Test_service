@@ -58,13 +58,6 @@ jobs:
         run: curl -I https://chromedriver.storage.googleapis.com/126.0.6478.62/chromedriver_linux64.zip
       - name: Update WebDriver
         run: npx webdriver-manager update --gecko false
-      # Запасной вариант:
-      # - name: Install ChromeDriver manually
-      #   run: |
-      #     curl -o chromedriver.zip https://chromedriver.storage.googleapis.com/126.0.6478.62/chromedriver_linux64.zip
-      #     unzip chromedriver.zip -d node_modules/protractor/node_modules/webdriver-manager/selenium/
-      #     mv node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_126.0.6478.62 node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver
-      #     chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver
       - name: Debug WebDriver
         run: ls -la node_modules/protractor/node_modules/webdriver-manager/selenium
       - name: List test files
@@ -85,8 +78,11 @@ jobs:
         run: npx ng test --browsers=ChromeHeadless --watch=false
         env:
           CHROME_BIN: /usr/bin/google-chrome
+      - name: Kill existing processes on port 4200
+        run: |
+          fuser -k 4200/tcp || true
       - name: Start server for E2E tests
-        run: npx ng serve --proxy-config proxy-conf.json &
+        run: npx ng serve --port 0 --proxy-config proxy-conf.json &
         env:
           CI: true
       - name: Wait for server
