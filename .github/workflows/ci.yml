@@ -49,54 +49,54 @@ jobs:
       - name: Clear npm cache
         run: npm cache clean --force
 
-      - name: Install Chromium and ChromeDriver on Debian
+      - name: Install dependencies for Chromium and ChromeDriver
         run: |
           sudo apt-get update
-          sudo apt-get install -y libnss3 libxss1 libasound2t64 libatk-bridge2.0-0 libgtk-3-0 libgbm1 wget gdebi-core
+          sudo apt-get install -y \
+            libnss3 libxss1 libasound2t64 libatk-bridge2.0-0 libgtk-3-0 libgbm1 libflac8 wget gdebi-core
 
-          # Скачиваем Chromium и ChromeDriver
+      - name: Try to install Chromium and ChromeDriver from sid repos (if available)
+        run: |
+          echo "deb http://deb.debian.org/debian sid main" | sudo tee /etc/apt/sources.list.d/sid.list
+          sudo apt-get update
+          sudo apt-get -t sid install -y chromium chromium-driver || echo "Sid install failed, fallback to manual .deb"
+
+      - name: Fallback: Download and install Chromium and ChromeDriver .deb packages
+        if: failure()
+        run: |
           wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium_136.0.7103.113-1_amd64.deb
           wget http://ftp.ru.debian.org/debian/pool/main/c/chromium/chromium-driver_136.0.7103.113-1_amd64.deb
-
-          # Устанавливаем
           sudo gdebi --non-interactive chromium_136.0.7103.113-1_amd64.deb
           sudo gdebi --non-interactive chromium-driver_136.0.7103.113-1_amd64.deb
 
-          # Установка переменной окружения
-          echo "CHROME_BIN=/usr/bin/chromium" >> $GITHUB_ENV
+      - name: Set CHROME_BIN env variable
+        run: echo "CHROME_BIN=/usr/bin/chromium" >> $GITHUB_ENV
 
-      - name: Debug Chromium installation
+      - name: Debug Chromium and ChromeDriver
         run: |
           which chromium || echo "Chromium not found"
           chromium --version || echo "Chromium version check failed"
           which chromedriver || echo "ChromeDriver not found"
           chromedriver --version || echo "ChromeDriver version check failed"
 
-      - name: Install dependencies
+      - name: Install npm dependencies
         run: npm ci
 
-      - name: Install Protractor
+      - name: Install Protractor globally
         run: npm install -g protractor
 
-      - name: Copy ChromeDriver to Protractor directory
+      - name: Copy ChromeDriver to Protractor selenium folder
         run: |
           mkdir -p node_modules/protractor/node_modules/webdriver-manager/selenium
           cp $(which chromedriver) node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
           chmod +x node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113
 
-      - name: Debug ChromeDriver
+      - name: Debug ChromeDriver in Protractor selenium folder
         run: |
           ls -l node_modules/protractor/node_modules/webdriver-manager/selenium
           node_modules/protractor/node_modules/webdriver-manager/selenium/chromedriver_136.0.7103.113 --version
 
-      - name: List test files
-        run: |
-          echo "Unit test files:"
-          find src/app -name "*.spec.ts"
-          echo "E2E test files:"
-          find e2e/src -name "*.e2e-spec.ts"
-
-      - name: Build project
+      - name: Build frontend project
         run: npx ng build
 
       - name: Run unit tests
@@ -105,26 +105,25 @@ jobs:
           CHROME_BIN: /usr/bin/chromium
           CI: true
 
-      - name: Kill existing processes on port 7860
-        run: fuser -k 7860/tcp || true
+      - name: Kill processes on ports 7860 and 8080
+        run: |
+          fuser -k 7860/tcp || true
+          fuser -k 8080/tcp || true
 
-      - name: Kill existing processes on port 8080
-        run: fuser -k 8080/tcp || true
-
-      - name: Start backend
+      - name: Start backend server
         run: |
           cd ../backend
           mvn spring-boot:run &
           sleep 10
 
-      - name: Start server for E2E tests
+      - name: Start frontend server for E2E tests
         run: |
           npx ng serve --port 7860 --proxy-config proxy-conf.json &
           echo "E2E_BASE_URL=http://localhost:7860/" >> $GITHUB_ENV
         env:
           CI: true
 
-      - name: Wait for server
+      - name: Wait for frontend server to start
         run: sleep 10
 
       - name: Run E2E tests
@@ -132,7 +131,7 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/chromium
 
-      - name: Check test results
+      - name: Check test results coverage
         if: always()
         run: |
           echo "Test results summary:"
@@ -147,7 +146,7 @@ jobs:
             echo "No coverage report generated."
           fi
 
-      - name: Upload coverage report
+      - name: Upload coverage report artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
