@@ -14,9 +14,10 @@ describe('AppComponent', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async(() => {
-    const ecommerceServiceSpy = jasmine.createSpyObj('EcommerceService', ['getAllProducts', 'saveOrder']);
+    const ecommerceServiceSpy = jasmine.createSpyObj('EcommerceService', ['getAllProducts', 'saveOrder', 'reset']);
     ecommerceServiceSpy.getAllProducts.and.returnValue(of([]));
     ecommerceServiceSpy.saveOrder.and.returnValue(of({}));
+    ecommerceServiceSpy.reset.and.returnValue(undefined);
     ecommerceServiceSpy.ProductOrders = new ProductOrders();
     ecommerceServiceSpy.SelectedProductOrder = null;
     ecommerceServiceSpy.OrdersChanged = of();
@@ -45,19 +46,29 @@ describe('AppComponent', () => {
 
   afterEach(() => {
     httpMock.verify();
-    httpMock.expectNone('/api/products');
-    TestBed.createComponent(AppComponent).destroy();
   });
 
   it('should create the app', async(() => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.debugElement.componentInstance;
+
+    // Перехватываем запрос /api/products
+    const req = httpMock.expectOne('/api/products');
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+
     fixture.detectChanges();
     expect(app).toBeTruthy();
   }));
 
   it('should render ecommerce component', async(() => {
     const fixture = TestBed.createComponent(AppComponent);
+
+    // Перехватываем запрос /api/products
+    const req = httpMock.expectOne('/api/products');
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+
     fixture.detectChanges();
     const compiled = fixture.debugElement.nativeElement;
     expect(compiled.querySelector('app-ecommerce')).toBeTruthy();
