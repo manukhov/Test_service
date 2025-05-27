@@ -85,16 +85,16 @@ cd Test_service
 docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
 docker compose up --build
 ```
-##  CI Pipeline 
----
-#  Backend
+#  CI Pipeline 
+
+###  Backend
 1. Использует Ubuntu (`ubuntu-latest`) как среду выполнения
 3. Клонирует репозиторий 
 4. Устанавливает JDK 17
 5. Собирает проект через Maven
 6. Запускает юнит-тесты
    
-# Frontend
+### Frontend
 1. Использует Ubuntu как среду выполнения
 2. Клонирует репозиторий
 3. Устанавливает Node.js 16
@@ -119,4 +119,4 @@ docker compose up --build
 22. Проверяет результаты тестов, логирует coverage
 23. Загружает coverage-отчёт
 
-## P.S. Chrome-Driver пришлось качать и ставить руками, потому-что webdriver-manager ставил старый и E2E тесты запарывались, требуя новую версию.
+### P.S. Chrome-Driver пришлось качать и ставить руками, потому-что webdriver-manager ставил старый и E2E тесты запарывались, требуя новую версию.
