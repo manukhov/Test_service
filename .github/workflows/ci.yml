@@ -135,10 +135,3 @@ jobs:
           else
             echo "No coverage report generated."
           fi
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-report
-          path: frontend/coverage
-          retention-days: 7
