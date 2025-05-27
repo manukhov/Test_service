@@ -85,12 +85,9 @@ cd Test_service
 docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
 docker compose up --build
 ```
-## 🛠️ CI Pipeline (GitHub Actions)
+##  CI Pipeline 
 
-**Общие события:**
-- Триггер на `push` и `pull_request` в ветку `main`
-
-##  Backend
+#  Backend
 1. Использует Ubuntu (`ubuntu-latest`) как среду выполнения
 3. Клонирует репозиторий 
 4. Устанавливает JDK 17
@@ -99,7 +96,7 @@ docker compose up --build
 
 ---
 
-### Frontend
+# Frontend
 1. Использует Ubuntu как среду выполнения
 2. Клонирует репозиторий
 3. Устанавливает Node.js 16
