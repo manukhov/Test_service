@@ -88,7 +88,7 @@ docker compose up --build
 #  CI Pipeline 
 
 ###  Backend
-1. Использует Ubuntu (`ubuntu-latest`) как среду выполнения
+1. Использует Ubuntu как среду выполнения
 3. Клонирует репозиторий 
 4. Устанавливает JDK 17
 5. Собирает проект через Maven
