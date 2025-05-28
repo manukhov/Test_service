@@ -96,9 +96,6 @@ jobs:
       - name: Kill existing processes on port 7860
         run: |
           fuser -k 7860/tcp || true
-      - name: Kill existing processes on port 8080
-        run: |
-          fuser -k 8080/tcp || true
       - name: Start backend
         run: |
           cd ../backend
