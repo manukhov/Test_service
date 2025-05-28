@@ -93,16 +93,11 @@ jobs:
         run: npx ng test --browsers=ChromeHeadless --watch=false
         env:
           CHROME_BIN: /usr/bin/google-chrome
-      - name: Kill existing processes on port 7860
-        run: |
-          fuser -k 7860/tcp || true
       - name: Start backend
         run: |
           cd ../backend
           mvn spring-boot:run &
           sleep 10
-      - name: Debug backend port
-        run: lsof -i :8080 || echo "Port 8080 is free"
       - name: Debug backend API
         run: |
           curl -v http://localhost:8080/api/products || echo "Backend API not responding"
